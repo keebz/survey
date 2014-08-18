@@ -9,10 +9,8 @@ describe Survey do
 
   it "has many questions" do
     new_survey = Survey.create({name: "New Bike"})
-    new_question = Question.create({question: "What kind?"})
-    new_question1 = Question.create({question: "How much?"})
-    new_survey.questions << new_question
-    new_survey.questions << new_question1
+    new_question = new_survey.questions.create({question: "What kind?"})
+    new_question1 = new_survey.questions.create({question: "How much?"})
     expect(new_survey.questions).to eq [new_question, new_question1]
   end
 end
