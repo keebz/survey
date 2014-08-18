@@ -46,29 +46,33 @@ def select_survey
   list_surveys
   puts "please select a survey by number:"
   selection = gets.chomp.to_i - 1
-  new_user = User.create()
+  @new_user = User.create()
 
   @user_survey = Survey.all[selection]
   @user_survey.questions.each do |question|
+    @current_question = question
     puts question.question
-
     if question.answers.first.answer == nil
-      puts "Enter your own answer:"
-      answer = Answer.create({:answer => gets.chomp, :question_id => question.id})
-      new_user.answers << answer
+      own_answer
     else
-    puts "Select from the following answers:"
-    question.answers.each do |answer|
-      puts answer.answer
+      puts "Select from the following answers, or enter 'other' to provide your own:"
+      question.answers.each do |answer|
+        # if answer.option == false
+        puts answer.answer
+        # end
+      end
       loop do
         answer = gets.chomp
-        selected_answer = question.answers.find_by({answer: answer})
-        puts "would you like to add an addtional answer to the question?"
-        answer = gets.chomp.downcase
+        if answer == 'other'
+          own_answer
+        else
+          selected_answer = question.answers.find_by({answer: answer})
+          puts "would you like to add an addtional answer to the question?"
+          answer = gets.chomp.downcase
           if answer == 'y'
             puts "insert additional answer:"
           elsif answer == 'n'
-            new_user.answers << selected_answer
+            @new_user.answers << selected_answer
           break
           else
             puts "invalid entry"
@@ -77,6 +81,12 @@ def select_survey
       end
     end
   end
+end
+
+def own_answer
+  puts "Enter your own answer:"
+  answer = Answer.create({:answer => gets.chomp, :question_id => @current_question.id})
+  @new_user.answers << answer
 end
 
 def surveyor_menu
