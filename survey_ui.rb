@@ -1,4 +1,5 @@
 require 'bundler/setup'
+require 'pry'
 Bundler.require(:default)
 
 Dir[File.dirname(__FILE__) + '/lib/*.rb'].each { |file| require file }
@@ -51,24 +52,36 @@ def select_survey
   @user_survey.questions.each do |question|
     puts question.question
 
+    if question.answers.first.answer == nil
+      puts "Enter your own answer:"
+      answer = Answer.create({:answer => gets.chomp, :question_id => question.id})
+      new_user.answers << answer
+    else
     puts "Select from the following answers:"
-
     question.answers.each do |answer|
       puts answer.answer
+      loop do
+        answer = gets.chomp
+        selected_answer = question.answers.find_by({answer: answer})
+        puts "would you like to add an addtional answer to the question?"
+        answer = gets.chomp.downcase
+          if answer == 'y'
+            puts "insert additional answer:"
+          elsif answer == 'n'
+            new_user.answers << selected_answer
+          break
+          else
+            puts "invalid entry"
+          end
+        end
+      end
     end
-    answer = gets.chomp
-    selected_answer = question.answers.find_by({answer: answer})
-    new_user.answers << selected_answer
   end
-
 end
 
-
 def surveyor_menu
-
   puts "to create a new survey press [1]"
   puts "to select a survey to modify press [2]"
-  # puts "to see a survey takers results press [3]"
   puts "to see all of the results for a survey press [3]"
   puts "to exit to main menu press [m]"
   selection = gets.chomp.to_s
@@ -80,8 +93,6 @@ def surveyor_menu
     when '2'
       edit_survey
       surveyor_menu
-    # when '3'
-    #   select_user
     when '3'
       survey_results
       puts "\n\n"
@@ -91,22 +102,17 @@ def surveyor_menu
   main
 end
 
-# def select_user
-#   list_users
-#   puts "Enter a user ID to view the surveys the user has taken:"
-#   @current_user = User.find(gets.chomp)
-#   puts ""
-# end
-
 def survey_results
   list_surveys
   puts "Enter the survey name to see its results:"
   current_survey = Survey.find_by(name: gets.chomp)
   current_survey.questions.each do |question|
-    puts "\n\nFor People Asked " + question.question
+    puts "\n\nFor People Asked " + '"' + question.question + '"'
     question.answers.each do |answer|
+      # binding.pry
+      if answer.answer != nil
       puts answer.users.count.to_s + " answered with: " + answer.answer
-
+      end
     end
   end
 end
@@ -136,7 +142,14 @@ def add_question
   @new_question = Question.create({question: gets.chomp})
   @new_survey.questions << @new_question
   puts "New question added to '#{@new_survey.name}'!"
-  add_answers
+  puts "Is your question open-ended?"
+  case gets.chomp
+  when 'y' then open_ended_answer
+  when 'n' then add_answers
+  else
+    puts "Invalid choice."
+    add_question
+  end
 end
 
 def delete_question
@@ -157,6 +170,12 @@ def add_answers
   if gets.chomp.upcase == 'Y'
     add_answers
   end
+end
+
+def open_ended_answer
+  new_answer = Answer.create()
+  @new_question.answers << new_answer
+  puts "Open-end answer added to '#{@new_question.question}'"
 end
 
 def edit_survey
